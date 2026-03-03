@@ -313,10 +313,24 @@ async fn run_server(config: Config, storage: Storage) {
         .merge(registry_routes)
         .layer(general_limiter);
 
+    //feat/body_limit
+    // Читаем переменную окружения NORA_BODY_SIZE_LIMIT_MB (в мегабайтах)
+    let body_limit_mb: usize = std::env::var("NORA_BODY_SIZE_LIMIT_MB")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(100); // если переменная не задана или не число — 100 МБ
+
+    let body_limit_bytes = body_limit_mb * 1024 * 1024;
+
+    // Логируем установленный лимит
+    info!(body_limit_mb = body_limit_mb, "Body size limit configured");
+    // --------------------------------------
+
     let app = Router::new()
         .merge(public_routes)
         .merge(rate_limited_routes)
-        .layer(DefaultBodyLimit::max(1024 * 1024 * 1024 * 2)) // Было 100MB default body limit стало 2GB
+        // Используем вычисленный лимит вместо жестко заданного 100MB
+        .layer(DefaultBodyLimit::max(body_limit_bytes))
         .layer(middleware::from_fn(request_id::request_id_middleware))
         .layer(middleware::from_fn(metrics::metrics_middleware))
         .layer(middleware::from_fn_with_state(
