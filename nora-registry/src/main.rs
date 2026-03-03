@@ -316,7 +316,7 @@ async fn run_server(config: Config, storage: Storage) {
     let app = Router::new()
         .merge(public_routes)
         .merge(rate_limited_routes)
-        .layer(DefaultBodyLimit::max(100 * 1024 * 1024)) // 100MB default body limit
+        .layer(DefaultBodyLimit::max(1024 * 1024 * 1024 * 2)) // Было 100MB default body limit стало 2GB
         .layer(middleware::from_fn(request_id::request_id_middleware))
         .layer(middleware::from_fn(metrics::metrics_middleware))
         .layer(middleware::from_fn_with_state(
